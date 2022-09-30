@@ -1,4 +1,4 @@
-import { Search2Icon } from "@chakra-ui/icons";
+import { ArrowForwardIcon, Search2Icon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -9,55 +9,63 @@ import {
   InputGroup,
   InputLeftElement,
   DarkMode,
+  Grid,
+  Image,
+  GridItem,
+  Link,
 } from "@chakra-ui/react";
 import Painel from "../Painel";
 import { useEffect, useState } from "react";
 export default function Form() {
   const [search, setSearch] = useState("");
-  const [quant, setQuant] = useState();
+  const [quant, setQuant] = useState(0);
   const [repositorios, setRepositorio] = useState([]);
 
-  let i = 0;
-
-  async function carregarRepositorios() {
+  /***async function carregarRepositorios() {
     const response = await fetch(
       "https://api.github.com/search/repositories?q=" + search
     );
     const setRepositorio = await response.json();
-
     const repositorios = setRepositorio;
     repositorios.forEach((a: object) => {
       i = i + 1;
       salvarDados(repositorios[i]);
     });
-    function salvarDados(dado: object) {
-      const dados = dado;
 
-      const valores = {
-        repositorio: repositorios[i].full_name,
-        description: repositorios[i].description,
-        login: repositorios[i].login,
-        avatar_url: repositorios[i].avatar_url,
-        html_url: repositorios[i].html_url,
-      };
-    }
-  }
+  function salvarDados(dado: object) {
+    const dados = dado;
 
-  function pegarValor() {
-    carregarRepositorios();
-  }
-
-  /**
+    const valores = {
+      repositorio: repositorios[i].full_name,
+      description: repositorios[i].description,
+      login: repositorios[i].login,
+      avatar_url: repositorios[i].avatar_url,
+      html_url: repositorios[i].html_url,
+    };
+  }*/
   useEffect(() => {
+    carregarRepositorios();
     async function carregarRepositorios() {
       const response = await fetch(
         "https://api.github.com/search/repositories?q=" + search
       );
-      const setRepositorio = await response.json();
-      console.log(response);
+      const reps = await response.json();
+      if (reps.items) {
+        const rep = reps.items.map((a: any) => {
+          return {
+            id: a.id,
+            repositorio: a.full_name,
+            description: a.description,
+            login: a.login,
+            avatar_url: a.owner.avatar_url,
+            html_url: a.html_url,
+          };
+        });
+        setQuant(rep.length);
+        setRepositorio(rep);
+      }
     }
-  }, [search]);*/
-
+  }, [search]);
   return (
     <Box>
       <Text
@@ -71,7 +79,7 @@ export default function Form() {
       </Text>
       <Flex justifyContent="space-between">
         <Flex mb="2rem">
-          <FormControl id="form" onSubmit={pegarValor}>
+          <FormControl id="form">
             <InputGroup>
               <InputLeftElement
                 pointerEvents="none"
@@ -86,22 +94,50 @@ export default function Form() {
                 placeholder="Pesquisar"
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <Button
-                name="input"
-                type="submit"
-                className="botao"
-                ml="10px"
-                colorScheme="blue"
-                variant="outline"
-                onClick={pegarValor}
-              >
-                Buscar
-              </Button>
             </InputGroup>
           </FormControl>
         </Flex>
-        <Text color="#718096"> 0 Repositorios Encontrados </Text>
+        <Text color="#718096"> {quant} Repositorios Encontrados </Text>
       </Flex>
+      <Grid templateColumns="repeat(2, 1fr)" gap={"16"} mt={"40px"}>
+        {repositorios.map((item: any) => (
+          <GridItem
+            w="100%"
+            borderRadius="10"
+            wordBreak={"break-all"}
+            boxShadow="xl"
+            key={item.id}
+          >
+            <Grid templateColumns="150px 1fr" gap={0} p={"10px"} pr={"25px"}>
+              <Box justifySelf={"center"} pt={"10px"}>
+                <Image
+                  borderRadius="full"
+                  boxSize="100px"
+                  src={item.avatar_url}
+                  alt=""
+                />
+              </Box>
+              <Grid gap={"5px"}>
+                <Text fontWeight={"bold"} fontSize={"3xl"} color={"gray.800"}>
+                  {item.repositorio}
+                </Text>
+                <Text color={"gray.500"}>{item.description}</Text>
+                <Link href={item.html_url} isExternal>
+                  <Text
+                    fontWeight={"bold"}
+                    fontSize={"lg"}
+                    variant="link"
+                    color={"blue.600"}
+                  >
+                    Ver repositorio
+                    <ArrowForwardIcon mx="2px" />
+                  </Text>
+                </Link>
+              </Grid>
+            </Grid>
+          </GridItem>
+        ))}
+      </Grid>
     </Box>
   );
 }
